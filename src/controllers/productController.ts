@@ -1,55 +1,52 @@
-
 import { Request, Response } from "express";
-import { IProduct, Product } from "../models/product";
+import { ProductService } from "../services/productService";
+import { AppError } from "../middleware/errorHandler";
 
 export class ProductController {
+  private productService: ProductService;
 
-    public async getProducts(req: Request, res: Response): Promise<void> {
-        const products = await Product.find();
-        res.json({ products });
+  constructor(productService: ProductService) {
+    this.productService = productService;
+  }
+
+  public async getProducts(_req: Request, res: Response): Promise<void> {
+    const products = await this.productService.findAll();
+    res.json({ products });
+  }
+
+  public async getProduct(req: Request, res: Response): Promise<void> {
+    const product = await this.productService.findByProductId(req.params.id);
+    if (product === null) {
+      throw new AppError(404, "PRODUCT_NOT_FOUND", `Product with id '${req.params.id}' not found.`);
     }
+    res.json(product);
+  }
 
-    public async getProduct(req: Request, res: Response): Promise<void> {
-        const product = await Product.findOne({ productId: req.params.id });
-        if (product === null) {
-            res.sendStatus(404);
-        } else {
-            res.json(product);
-        }
+  public async createProduct(req: Request, res: Response): Promise<void> {
+    const existing = await this.productService.findByProductId(req.body.productId);
+    if (existing !== null) {
+      throw new AppError(422, "PRODUCT_ALREADY_EXISTS", `Product with id '${req.body.productId}' already exists.`);
     }
-
-    public async createProduct(req: Request, res: Response): Promise<void> {
-        const newProduct: IProduct = new Product(req.body);
-        const product = await Product.findOne({ productId: req.body.productId });
-        if (product === null) {
-            const result = await newProduct.save();
-            if (result === null) {
-                res.sendStatus(500);
-            } else {
-                res.status(201).json({ status: 201, data: result });
-            }
-
-        } else {
-            res.sendStatus(422);
-        }
+    const result = await this.productService.create(req.body);
+    if (result === null) {
+      throw new AppError(500, "CREATE_FAILED", "Failed to create product.");
     }
+    res.status(201).json({ status: 201, data: result });
+  }
 
-    public async updateProduct(req: Request, res: Response): Promise<void> {
-        const product = await Product.findOneAndUpdate({ productId: req.params.id }, req.body);
-        if (product === null) {
-            res.sendStatus(404);
-        } else {
-            const updatedProduct = { productId: req.params.id, ...req.body };
-            res.json({ status: res.status, data: updatedProduct });
-        }
+  public async updateProduct(req: Request, res: Response): Promise<void> {
+    const updatedProduct = await this.productService.updateByProductId(req.params.id, req.body);
+    if (updatedProduct === null) {
+      throw new AppError(404, "PRODUCT_NOT_FOUND", `Product with id '${req.params.id}' not found.`);
     }
+    res.json({ status: 200, data: updatedProduct });
+  }
 
-    public async deleteProduct(req: Request, res: Response): Promise<void> {
-        const product = await Product.findOneAndDelete({ productId: req.params.id });
-        if (product === null) {
-            res.sendStatus(404);
-        } else {
-            res.json({ response: "Product deleted Successfully" });
-        }
+  public async deleteProduct(req: Request, res: Response): Promise<void> {
+    const product = await this.productService.deleteByProductId(req.params.id);
+    if (product === null) {
+      throw new AppError(404, "PRODUCT_NOT_FOUND", `Product with id '${req.params.id}' not found.`);
     }
+    res.json({ response: "Product deleted Successfully" });
+  }
 }

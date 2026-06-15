@@ -4,6 +4,7 @@ import bcrypt from "bcrypt-nodejs";
 export interface IUser extends Document {
   username: string;
   password: string;
+  comparePassword(candidatePassword: string, callback: (err: Error, isMatch: boolean) => void): void;
 }
 
 export const userSchema: Schema = new Schema({
@@ -25,7 +26,7 @@ userSchema.pre<IUser>("save", function save(next) {
   });
 });
 
-userSchema.methods.comparePassword = function (candidatePassword: string, callback: any) {
+userSchema.methods.comparePassword = function (candidatePassword: string, callback: (err: Error, isMatch: boolean) => void) {
   bcrypt.compare(candidatePassword, this.password, (err: Error, isMatch: boolean) => {
     callback(err, isMatch);
   });

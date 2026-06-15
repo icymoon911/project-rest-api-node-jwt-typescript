@@ -1,16 +1,19 @@
 import { Router } from "express";
 import { ProductController } from "../controllers/productController";
 import { AuthController } from "../controllers/authController";
-
+import { ProductService } from "../services/productService";
 
 export class ProductRoutes {
 
     public router: Router;
-    public productController: ProductController = new ProductController();
-    public authController: AuthController = new AuthController();
+    public productController: ProductController;
+    public authController: AuthController;
 
     constructor() {
         this.router = Router();
+        const productService = new ProductService();
+        this.productController = new ProductController(productService);
+        this.authController = new AuthController();
         this.routes();
     }
 

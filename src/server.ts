@@ -8,6 +8,7 @@ import { MONGODB_URI } from "./util/secrets";
 
 import { ProductRoutes } from "./routes/productRoutes";
 import { UserRoutes } from "./routes/userRoutes";
+import { OrderRoutes } from "./routes/orderRoutes";
 
 class Server {
   public app: express.Application;
@@ -22,6 +23,7 @@ class Server {
   public routes(): void {
     this.app.use("/api/user", new UserRoutes().router);
     this.app.use("/api/products", new ProductRoutes().router);
+    this.app.use("/api/orders", new OrderRoutes().router);
   }
 
   public config(): void {

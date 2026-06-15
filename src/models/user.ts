@@ -4,11 +4,13 @@ import bcrypt from "bcrypt-nodejs";
 export interface IUser extends Document {
   username: string;
   password: string;
+  isAdmin: boolean;
 }
 
 export const userSchema: Schema = new Schema({
   username: String,
   password: String,
+  isAdmin: { type: Boolean, default: false },
 });
 
 

@@ -14,6 +14,7 @@ export class AuthController {
       if (!user) {
         return res.status(401).json({ status: "error", code: "unauthorized" });
       } else {
+        (req as any).user = user;
         return next();
       }
     })(req, res, next);

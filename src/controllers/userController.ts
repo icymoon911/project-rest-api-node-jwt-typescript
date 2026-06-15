@@ -1,43 +1,39 @@
-import bcrypt from "bcrypt-nodejs";
 import { NextFunction, Request, Response } from "express";
-import * as jwt from "jsonwebtoken";
-import passport from "passport";
-import "../auth/passportHandler";
-import { User } from "../models/user";
-import { JWT_SECRET } from "../util/secrets";
+import { UserService } from "../services/userService";
+import { UnauthorizedError } from "../middleware/AppError";
 
-
+/**
+ * UserController — registration and login.
+ */
 export class UserController {
+  private userService: UserService;
 
-  public async registerUser(req: Request, res: Response): Promise<void> {
-    const hashedPassword = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10));
-
-    await User.create({
-      username: req.body.username,
-      password: hashedPassword,
-
-    });
-
-    const token = jwt.sign({ username: req.body.username, scope : req.body.scope }, JWT_SECRET);
-    res.status(200).send({ token: token });
+  constructor(userService?: UserService) {
+    this.userService = userService || new UserService();
   }
 
-  public authenticateUser(req: Request, res: Response, next: NextFunction) {
-    passport.authenticate("local", function (err, user, info) {
-      // no async/await because passport works only with callback ..
-      if (err) return next(err);
-      if (!user) {
-        return res.status(401).json({ status: "error", code: "unauthorized" });
-      } else {
-        const token = jwt.sign({ username: user.username }, JWT_SECRET);
-        res.status(200).send({ token: token });
+  public registerUser = async (req: Request, res: Response): Promise<void> => {
+    const { username, password, scope } = req.body;
+    const token = await this.userService.register(username, password, scope);
+    res.status(200).send({ token });
+  };
+
+  /**
+   * Passport-local callback — we stay with callback style because
+   * passport.authenticate does not reliably work with async/await.
+   */
+  public authenticateUser = (req: Request, res: Response, next: NextFunction) => {
+    // Lazy require to avoid circular imports at module-load time
+    const passport = require("passport");
+    passport.authenticate("local", (err: Error, user: any) => {
+      if (err) {
+        return next(err);
       }
-    });
-  }
-
-
-
-
-
-
+      if (!user) {
+        return next(new UnauthorizedError("Invalid username or password", "invalid_credentials"));
+      }
+      const token = this.userService.generateToken(user.username);
+      res.status(200).send({ token });
+    })(req, res, next);
+  };
 }

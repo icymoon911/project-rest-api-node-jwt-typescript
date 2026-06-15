@@ -1,55 +1,38 @@
-
 import { Request, Response } from "express";
-import { IProduct, Product } from "../models/product";
+import { ProductService } from "../services/productService";
 
+/**
+ * ProductController — thin HTTP layer; all business logic is in ProductService.
+ */
 export class ProductController {
+  private productService: ProductService;
 
-    public async getProducts(req: Request, res: Response): Promise<void> {
-        const products = await Product.find();
-        res.json({ products });
-    }
+  constructor(productService?: ProductService) {
+    this.productService = productService || new ProductService();
+  }
 
-    public async getProduct(req: Request, res: Response): Promise<void> {
-        const product = await Product.findOne({ productId: req.params.id });
-        if (product === null) {
-            res.sendStatus(404);
-        } else {
-            res.json(product);
-        }
-    }
+  public getProducts = async (req: Request, res: Response): Promise<void> => {
+    const products = await this.productService.findAll();
+    res.json({ products });
+  };
 
-    public async createProduct(req: Request, res: Response): Promise<void> {
-        const newProduct: IProduct = new Product(req.body);
-        const product = await Product.findOne({ productId: req.body.productId });
-        if (product === null) {
-            const result = await newProduct.save();
-            if (result === null) {
-                res.sendStatus(500);
-            } else {
-                res.status(201).json({ status: 201, data: result });
-            }
+  public getProduct = async (req: Request, res: Response): Promise<void> => {
+    const product = await this.productService.findByProductId(req.params.id);
+    res.json(product);
+  };
 
-        } else {
-            res.sendStatus(422);
-        }
-    }
+  public createProduct = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.productService.create(req.body);
+    res.status(201).json({ status: 201, data: result });
+  };
 
-    public async updateProduct(req: Request, res: Response): Promise<void> {
-        const product = await Product.findOneAndUpdate({ productId: req.params.id }, req.body);
-        if (product === null) {
-            res.sendStatus(404);
-        } else {
-            const updatedProduct = { productId: req.params.id, ...req.body };
-            res.json({ status: res.status, data: updatedProduct });
-        }
-    }
+  public updateProduct = async (req: Request, res: Response): Promise<void> => {
+    const updated = await this.productService.update(req.params.id, req.body);
+    res.json({ status: 200, data: updated });
+  };
 
-    public async deleteProduct(req: Request, res: Response): Promise<void> {
-        const product = await Product.findOneAndDelete({ productId: req.params.id });
-        if (product === null) {
-            res.sendStatus(404);
-        } else {
-            res.json({ response: "Product deleted Successfully" });
-        }
-    }
+  public deleteProduct = async (req: Request, res: Response): Promise<void> => {
+    await this.productService.delete(req.params.id);
+    res.json({ response: "Product deleted Successfully" });
+  };
 }

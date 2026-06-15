@@ -1,7 +1,12 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { ProductController } from "../controllers/productController";
 import { AuthController } from "../controllers/authController";
 
+function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };
+}
 
 export class ProductRoutes {
 
@@ -15,10 +20,10 @@ export class ProductRoutes {
     }
 
     routes() {
-        this.router.get("/", this.productController.getProducts);
-        this.router.get("/:id", this.productController.getProduct);
-        this.router.post("/", this.authController.authenticateJWT, this.productController.createProduct);
-        this.router.put("/:id", this.authController.authenticateJWT, this.productController.updateProduct);
-        this.router.delete("/:id", this.authController.authenticateJWT, this.productController.deleteProduct);
+        this.router.get("/", asyncHandler(this.productController.getProducts.bind(this.productController)));
+        this.router.get("/:id", asyncHandler(this.productController.getProduct.bind(this.productController)));
+        this.router.post("/", this.authController.authenticateJWT, asyncHandler(this.productController.createProduct.bind(this.productController)));
+        this.router.put("/:id", this.authController.authenticateJWT, asyncHandler(this.productController.updateProduct.bind(this.productController)));
+        this.router.delete("/:id", this.authController.authenticateJWT, asyncHandler(this.productController.deleteProduct.bind(this.productController)));
     }
 }

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 
 import compression from "compression";
@@ -22,6 +22,12 @@ class Server {
   public routes(): void {
     this.app.use("/api/user", new UserRoutes().router);
     this.app.use("/api/products", new ProductRoutes().router);
+
+    // Global error handler
+    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      console.error("Unhandled error:", err.message);
+      res.status(500).json({ status: "error", message: "Internal server error." });
+    });
   }
 
   public config(): void {

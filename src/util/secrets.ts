@@ -12,3 +12,5 @@ if (!JWT_SECRET) {
     console.log("No JWT secret string. Set JWT_SECRET environment variable.");
     process.exit(1);
 }
+
+export const JWT_EXPIRATION = process.env["JWT_EXPIRATION"] || "1h";
